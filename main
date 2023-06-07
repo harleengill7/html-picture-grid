@@ -1,0 +1,333 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
+#include <string.h>
+
+struct Node
+{
+    //Our payload is 3 strings
+    
+    char *firstName;
+    char *lastName;
+    char *link;
+
+    char *favbook;
+    char *favsong;
+
+    struct Node *next;
+};
+typedef struct Node Node;
+struct List
+{
+    int n;
+    struct Node *head;
+};
+typedef struct List List;
+//API
+Node * nodeNew (char firstName_in[], char lastName_in[], char favSong_in[], char favBook_in[], char link_in[]);
+List * listNew();
+char ** read_file(char *file_name, int *num_lines);
+int getCommaIndex(char *str, int index[]);
+char * getSubString(char *str, int i1, int i2);
+char ** parse_csv(char *csv, int *numValues);
+Node * new_node_from_csv(char *csv, int *numValues);
+void list_pushback(List *list, char *firstname_in, char *lastname_in, char *favebook_in, char *favsong_in, char *link_in);
+void list_print(List *list, char *label);
+//Function Definitions
+Node * nodeNew (char firstName_in[], char lastName_in[], char favSong_in[], char favBook_in[], char link_in[])
+{
+    //each node stores fata of 1 student
+    Node *node;
+    node = (Node*) malloc(sizeof(Node));
+
+    int n = strlen(firstName_in);
+    node->firstName = (char *)malloc((n+1) * sizeof(char));
+    strcpy(node -> firstName, firstName_in);
+    
+    int m = strlen(lastName_in);
+    node->lastName = (char *)malloc((m+1) * sizeof(char));
+    strcpy(node -> lastName, lastName_in);
+    
+    int p = strlen(favSong_in);
+    node->favsong = (char *)malloc((p+1) * sizeof(char));
+    strcpy(node -> favsong, favSong_in);
+    
+    int q = strlen(favBook_in);
+    node->favbook = (char *)malloc((q+1) * sizeof(char));
+    strcpy(node -> favbook, favBook_in);
+    
+    int d = strlen(link_in);
+    node->link = (char *)malloc((d+1) * sizeof(char));
+    strcpy(node -> link, link_in);
+
+    node -> next = NULL;
+
+    return(node);
+
+}
+
+List* listNew()
+{
+    //set up head node, call nodeNew, pass in empty string of each function
+    List *list;
+    Node *node;
+    list = (List*) malloc (sizeof(List));
+    list -> n = 0; //initializing n to zero
+
+    list ->head = nodeNew(" "," "," "," ", " ");
+
+    return(list);
+
+}
+char ** read_file(char *file_name, int *num_lines)
+{
+    FILE *fp;
+    
+    int count;
+    char **lines;
+    char str[1000]; //string u want to store too
+    
+    fp = fopen(file_name, "r");
+    
+    //to get count(n) set up while loop
+    count = 0;
+    while(fgets(str, 1000, fp) !=NULL)
+    {
+        count = count +1;
+    }
+    
+    lines = (char **)malloc(count * sizeof(char*)); //count is number of lines we want
+    
+    rewind(fp); //stakes u back to start of file
+    
+    count = 0;
+    while(fgets(str, 1000, fp) !=NULL)
+    {
+        //capture the string, malloc based on str length
+        int len = strlen(str);
+        
+        str[len-1] = '\0'; //deletes empty line
+        lines[count] = (char*)malloc(len*sizeof(char)+1);
+        strcpy(lines[count], str);
+        
+        count = count + 1;
+    }
+    
+    *num_lines = count;
+    
+    fclose(fp);
+    return(lines);
+}
+
+int getCommaIndex(char *str, int index[])
+{
+    int count;
+    
+    count = 0;
+    for(int i=0;i<strlen(str);i++)
+    {
+        if (str[i] == ',')
+        {
+            index[count] = i;
+            count = count + 1;
+        }
+    }
+    
+    return(count);
+}
+char * getSubString(char *str, int i1, int i2)
+{
+    int len = i2 - i1 + 1;
+    
+    char *substr = (char*)malloc(len * sizeof(char)+1);
+    
+    for(int i=0;i<len;i++)
+    {
+        substr[i] = str[i + i1];
+    }
+    
+    substr[len] = '\0';
+    
+    return(substr);
+    
+}
+char ** parse_csv(char *csv, int *numValues)
+{
+    char **values;
+    
+    int index[1000], numCommas, i1, i2;
+    
+    numCommas = getCommaIndex(csv, index);
+    *numValues = numCommas + 1;
+    
+    values = (char **)malloc(*numValues * sizeof(char *));
+    
+    for(int i=0;i<*numValues;i++)
+    {
+        //take care of edge cases i1=0, i2=strlen(str) -1
+        if (i==0) i1 = 0; //first value
+        else i1 = index[i-1] + 1;
+        
+        if(i == *numValues - 1) i2 = strlen(csv) - 1;//last value
+        else i2 = index[i] - 1;
+        
+        //int len = i2 - i1 + 1; // num letters in substring
+        
+        values[i] = getSubString(csv, i1, i2); //helper function
+
+    }
+    
+    return(values);
+}
+void list_pushback(List *list, char *firstname_in, char *lastname_in, char *favebook_in, char *favsong_in, char *link_in)//add new node to end of list that contains all values
+{
+    
+    Node *head = list->head;
+    Node *node;
+    Node *newNode;
+
+    newNode = nodeNew(firstname_in, lastname_in, favebook_in, favsong_in, link_in);
+
+    node = head;
+    while(node->next != NULL)
+    {
+        node = node->next; //advance thru our list
+    }
+
+    node->next = newNode;
+}
+void list_print(List *list, char *label)
+{
+    Node *head = list->head;
+    Node *node;
+
+    node = head;
+
+    printf("\n\nLinked List: %s", label);
+
+    /*printf("\n\n%p   data: %d", &node->data, node->data);
+    printf("\n\n%p   next: %p", &node->next, node->next);*/
+
+    printf("\n\n--------------------------------");
+
+    node = head->next; //first node
+
+    while(node !=NULL)
+    {
+        printf("\n\n%p   first name: %s", &node->firstName, node->firstName);
+        printf("\n%p   last name: %s", &node->lastName, node->lastName);
+        printf("\n%p   fav book: %s", &node->favbook, node->favbook);
+        printf("\n%p   fav song: %s", &node->favsong, node->favsong);
+        printf("\n%p   link: %s", &node->link, node->link);
+        printf("\n%p   next: %p", &node->next, node->next);
+
+        //move forward in list
+        node = node->next;
+
+    }
+
+}
+
+int main()
+{
+    char **lines;
+    int numLines, numValues; //for number of lines
+    char **val;
+
+    List *studentList;
+    
+    studentList = listNew();
+    
+    FILE *fp_out;
+    
+    //Reads in my links.csv.txt file and outputs in my output.html file
+    fp_out = fopen("/Users/harleengill/Documents/370/c-programs/assignments/output.html", "w");
+
+    lines = read_file("/Users/harleengill/Documents/370/c-programs/links.csv.txt", &numLines);
+    
+    for(int i=0;i<numLines;i++)
+    {
+        printf("\n%s", lines[i]);
+    }
+    
+    
+    //parse csv and put parsed values in node and push into list
+    for(int i=0;i<numLines;i++)
+    {
+        val = parse_csv(lines[i], &numValues);
+        list_pushback(studentList, val[0], val[1], val[2], val[3], val[4]);
+        
+    }
+    printf("\n%d", numLines);
+    list_print(studentList, "*studentList");
+    
+    fprintf(fp_out, "</html>\n");
+        fprintf(fp_out, "  <h1>ECE 370 Fall 2022</h1>\n");
+
+        fprintf(fp_out, "<head>\n");
+        fprintf(fp_out, "    <style>\n");
+        fprintf(fp_out, "        td.image {padding-top: 2em; padding-right: 3em;}\n");
+        fprintf(fp_out, "        td.name {padding-top: 0em; \n");
+        fprintf(fp_out, "                 font-family: sans-serif; \n");
+        fprintf(fp_out, "                 font-size: 10 pt}\n");
+        fprintf(fp_out, "        img {border: 3px solid pink;}\n");
+        fprintf(fp_out, "    </style>\n");
+        fprintf(fp_out, "</head>\n");
+        fprintf(fp_out, "<body>\n");
+        fprintf(fp_out, "  <table style='width:100%%'>   \n");
+
+    Node *row_start;
+    Node *node;
+    node = studentList->head;
+    
+    node= node->next;
+    
+   for(int i=0;i<numLines/5;i++)
+    {
+        row_start = node;
+        fprintf(fp_out, "\n<tr>");
+        for(int j=0;j<5;j++)
+        {
+            fprintf(fp_out, "\n<td class = 'image'>");
+            fprintf(fp_out,"\n<img src = '%s' width = '200' height = '200'>", node->link);
+            fprintf(fp_out,"\n</td>");
+            node = node->next;
+        }
+        fprintf(fp_out,"</tr>");
+        
+        node = row_start;
+        fprintf(fp_out,"<tr>");
+        for(int j=0;j<5;j++)
+        {
+            fprintf(fp_out,"\n<td class = 'name' > %s %s", node->firstName, node->lastName);
+            fprintf(fp_out,"");
+            node = node->next;
+        }
+        fprintf(fp_out,"</tr>");
+        
+        node = row_start;
+        fprintf(fp_out,"<tr>");
+        for(int j=0;j<5;j++)
+        {
+            fprintf(fp_out,"\n<td class = 'book' > %s", node->favbook);
+            fprintf(fp_out,"");
+            node = node->next;
+        }
+        fprintf(fp_out,"</tr>");
+        
+        node = row_start;
+        fprintf(fp_out,"</tr>");
+        for(int j=0;j<5;j++)
+        {
+            fprintf(fp_out,"\n<td class = 'song' > %s", node->favsong);
+            fprintf(fp_out,"");
+            node = node->next;
+        }
+        
+    }
+
+           
+    printf("\n\n");
+    return 0;
+}
